@@ -4,6 +4,8 @@ const app = express();
 require("dotenv").config();
 
 const connectDataBase = require('../config/db');
+const userRoutes = require('../routes/userRoutes');
+const messageRoutes = require('../routes/messageRoutes');
 
 connectDataBase();
 
@@ -14,6 +16,9 @@ app.use(cors());
 app.get('/', (req, res) => {
     res.send('App works properly!');
 });
+
+app.use('/api/user/', userRoutes);
+app.use('/api/message/', messageRoutes);
 
 const PORT = process.env.PORT || 1000;
 
