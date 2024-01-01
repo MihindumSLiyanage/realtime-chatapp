@@ -4,13 +4,13 @@ const users = [
     {
         username: 'Admin',
         email: 'admin@gmail.com',
-        password: bcrypt.hashSync('123456'),
+        password: bcrypt.hashSync('123456789'),
     },
     {
-        username: 'Kasun Isuru',
-        email: 'kasunis1234@gmail.com',
-        password: bcrypt.hashSync('123456'),
-    },
+        username: 'User',
+        email: 'user@gmail.com',
+        password: bcrypt.hashSync('123456789'),
+    }
 ];
 
 module.exports = users;

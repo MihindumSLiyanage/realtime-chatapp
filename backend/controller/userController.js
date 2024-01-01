@@ -1,30 +1,32 @@
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const {
-    signInToken
-} = require("../config/auth");
 
 const loginUser = async (req, res) => {
     try {
+        const {
+            username,
+            password
+        } = req.body;
         const user = await User.findOne({
-            email: req.body.email
+            username
         });
-
-        if (user && bcrypt.compareSync(req.body.password, user.password)) {
-            const token = signInToken(user);
-            res.send({
-                token,
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                avatarImage: user.avatarImage,
+        if (!user)
+            return res.json({
+                message: "Incorrect Username or Password",
+                status: false
             });
-        } else {
-            res.status(401).send({
-                message: "Incorrect Username or Password!",
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid)
+            return res.json({
+                message: "Incorrect Username or Password",
+                status: false
             });
-        }
+        delete user.password;
+        return res.json({
+            status: true,
+            user
+        });
     } catch (err) {
         res.status(500).send({
             message: err.message,
@@ -34,29 +36,38 @@ const loginUser = async (req, res) => {
 
 const registerUser = async (req, res) => {
     try {
-        const isAdded = await User.findOne({
-            email: req.body.email
+        const {
+            username,
+            email,
+            password
+        } = req.body;
+        const usernameCheck = await User.findOne({
+            username
         });
-        if (isAdded) {
-            return res.status(403).send({
-                message: "This Email already Added!",
+        if (usernameCheck)
+            return res.json({
+                message: "Username already used",
+                status: false
             });
-        } else {
-            const newuser = new User({
-                username: req.body.username,
-                email: req.body.email,
-                password: bcrypt.hashSync(req.body.password),
+        const emailCheck = await User.findOne({
+            email
+        });
+        if (emailCheck)
+            return res.json({
+                message: "Email already used",
+                status: false
             });
-            const user = await newuser.save();
-            const token = signInToken(user);
-            res.send({
-                token,
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                message: "Email Verified, Please Login Now!",
-            });
-        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await User.create({
+            email,
+            username,
+            password: hashedPassword,
+        });
+        delete user.password;
+        return res.json({
+            status: true,
+            user
+        });
     } catch (err) {
         res.status(500).send({
             message: err.message,
@@ -66,13 +77,16 @@ const registerUser = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({}).sort({
-            _id: -1
-        });
-        res.send(users);
+        const users = await User.find({ _id: { $ne: req.params.id } }).select([
+            "email",
+            "username",
+            "avatarImage",
+            "_id",
+          ]);
+          return res.json(users);
     } catch (err) {
         res.status(500).send({
-            message: err.message
+            message: err.message,
         });
     }
 };
@@ -88,35 +102,11 @@ const getUserById = async (req, res) => {
     }
 };
 
-const updateUser = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (user) {
-            user.username = req.body.username;
-            user.email = req.body.email;
-
-            const updatedUser = await user.save();
-            const token = signInToken(updatedUser);
-
-            res.send({
-                token,
-                _id: updatedUser._id,
-                username: updatedUser.username,
-                email: updatedUser.email,
-            });
-        }
-    } catch (err) {
-        res.status(404).send({
-            message: "Your email is not valid!",
-        });
-    }
-};
-
 const logoutUser = async (req, res) => {
     try {
         if (!req.params.id) {
             return res.status(400).json({
-                message: "User Id is required"
+                message: "User Id is required",
             });
         }
         onlineUsers.delete(req.params.id);
@@ -128,11 +118,35 @@ const logoutUser = async (req, res) => {
     }
 };
 
+const setAvatar = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const avatarImage = req.body.image;
+        const userData = await User.findByIdAndUpdate(
+            userId, {
+                isAvatarImageSet: true,
+                avatarImage,
+            }, {
+                new: true
+            }
+        );
+        return res.json({
+            isSet: userData.isAvatarImageSet,
+            image: userData.avatarImage,
+        });
+    } catch (err) {
+        res.status(500).send({
+            message: err.message,
+        });
+    }
+};
+
+
 module.exports = {
     loginUser,
     registerUser,
     getAllUsers,
     getUserById,
-    updateUser,
-    logoutUser
+    logoutUser,
+    setAvatar
 };

@@ -7,9 +7,9 @@ const {
 } = require("../controller/messageController");
 
 //send a message
-router.post("/send", addMessage);
+router.post("/addmsg/", addMessage);
 
 //get a message
-router.get("receive", getMessages);
+router.post("/getmsg/", getMessages);
 
 module.exports = router;

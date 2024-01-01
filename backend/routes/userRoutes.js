@@ -6,8 +6,8 @@ const {
     registerUser,
     getAllUsers,
     getUserById,
-    updateUser,
-    logoutUser
+    logoutUser,
+    setAvatar
 } = require("../controller/userController");
 
 //login a user
@@ -19,13 +19,13 @@ router.post("/register", registerUser);
 //logout a user
 router.post("/logout/:id", logoutUser);
 
-//get all user
-router.get("/", getAllUsers);
+//get all users
+router.get("/all/:id", getAllUsers);
 
 //get a user
 router.get("/:id", getUserById);
 
-//update a user
-router.put("/:id", updateUser);
+//update the avatar on user
+router.post("/setavatar/:id", setAvatar);
 
 module.exports = router;
